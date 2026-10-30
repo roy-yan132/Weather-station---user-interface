@@ -43,8 +43,30 @@ void setup(void) {
   Serial.begin(115200);
   Serial.println("Initializing...");
   tft.init(240, 320); // Initialize the TFT display with width and height
+  tft.setRotation(1); //Rotate the initial menu
 
   pinMode(JOY_SW, INPUT_PULLUP); // Set the joystick switch pin as input with pull-up resistor
+
+  //Start to draw starting menu
+  tft.fillScreen(ST7735_BLACK);//Screen background black
+
+  tft.setTextSize(3);
+  tft.setTextColor(ST7735_WHITE);
+  tft.setCursor(20,20);
+  tft.print("---MENU---");
+
+  tft.setTextColor(ST7735_WHITE, ST7735_CYAN);
+  tft.setCursor(20,80);
+  tft.print("1. Press hPa");
+
+  tft.setTextColor(ST7735_WHITE, ST7735_CYAN);
+  tft.setCursor(20,130);
+  tft.print("2. Press mBar");
+
+  tft.setTextColor(ST7735_WHITE, ST7735_CYAN);
+  tft.setCursor(20,180);
+  tft.print("3. Temp");
+
 } 
 
 void loop() { 
