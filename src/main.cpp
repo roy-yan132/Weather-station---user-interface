@@ -41,6 +41,8 @@ float p = 3.1415926;
 
 int menuOption = 0; // Variable to keep track of the selected menu option
 
+int lastJoyY = 2048; // Variable to store the last joystick Y position
+
 void drawMenu(){
   //Start to draw starting menu
   tft.fillScreen(ST7735_BLACK);//Screen background black
@@ -75,6 +77,25 @@ void setup(void) {
 } 
 
 void loop() { 
+  int yValue = analogRead(JOY_Y); // Read the Y-axis value of the joystick
+  //if pull up the joystick
+  if (yValue < 500 && lastJoyY >= 500) {  
+    menuOption--; //Move up
+    if (menuOption < 0) {
+      menuOption = 2;//Wrap around to the last option if it goes above the first option
+    } 
+    drawMenu(); 
+  } 
+  //if pull down the joystick
+  else if (yValue > 3500 && lastJoyY <= 3500) {  
+    menuOption++; //Move down
+    if (menuOption > 2) {
+      menuOption = 0;//Wrap around to the first option if it goes below the last option
+    }
+    drawMenu(); 
+  } 
 
+  lastJoyY = yValue; //Renew the y value
+  delay(50); 
 }
  
