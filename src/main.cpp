@@ -37,20 +37,23 @@ Adafruit_ST7789 tft = Adafruit_ST7789(TFT_CS, TFT_DC, TFT_RST);
 
 Adafruit_BMP280 bmp; 
 
-float p = 3.1415926;
+float p = 3.1415926; // Variable to store the value of pi
 
 int menuOption = 0; // Variable to keep track of the selected menu option
-
+int currentPage = 0; // Variable to keep track of the current page being displayed
 int lastJoyY = 2048; // Variable to store the last joystick Y position
+bool lastButtonState = HIGH; // Variable to store the last button state
+
+
 
 void drawMenu(){
   //Start to draw starting menu
-  tft.fillScreen(ST7735_BLACK);//Screen background black
+  tft.fillScreen(ST77XX_BLACK);//Screen background black
 
   tft.setTextSize(3);
-  tft.setTextColor(ST7735_WHITE);
+  tft.setTextColor(ST77XX_WHITE);
   tft.setCursor(20,20);
-  tft.print("---MENU---");
+  tft.print("-----MENU-----");
   String items[] = {"1. Pressure hPa", "2. Pressure mbar", "3. Temp(C)"}; 
    
   for (int i = 0; i < 3; i++) { 
@@ -64,9 +67,75 @@ void drawMenu(){
     tft.print(items[i]); 
   } 
 }
+
+void drawDataPage() { 
+  tft.fillScreen(ST77XX_BLACK); 
+  tft.setTextColor(ST77XX_GREEN, ST77XX_BLACK); 
+   
+  float temp = bmp.readTemperature(); 
+  float pressure = bmp.readPressure() / 100.0F; 
+ 
+  if (currentPage == 1) { 
+    tft.setTextSize(4); 
+    tft.setCursor(20, 20); 
+    tft.print("Pressure:"); 
+    tft.setCursor(20, 100); 
+    tft.print(pressure, 1); 
+    tft.print(" hPa"); 
+
+  }  
+  else if (currentPage == 2) { 
+    tft.setTextSize(6);  
+    tft.setCursor(10, 50); 
+    tft.print(pressure, 1); 
+    tft.setTextSize(3); 
+    tft.setCursor(20, 150); 
+    tft.print("mbar"); 
+  }  
+  else if (currentPage == 3) { 
+    tft.setTextSize(4); 
+    tft.setCursor(20, 20); 
+    tft.print("Temp:"); 
+    tft.setCursor(20, 100); 
+    tft.print(temp, 1); 
+    tft.print(" C"); 
+  } 
+ 
+  tft.setTextSize(2); 
+  tft.setTextColor(ST77XX_RED); 
+  tft.setCursor(20, 260); 
+  tft.print("Press SW to Exit"); 
+} 
+
 void setup(void) { 
   Serial.begin(115200);
   Serial.println("Initializing...");
+
+   // Initialize custom I2C pins for the ESP32-S3
+  Wire.begin(I2C_SDA, I2C_SCL);
+
+  // Initialize the BMP280 sensor explicitly at address 0x76
+  unsigned status = bmp.begin(0x76);
+  //Error checking
+  if (!status) {
+    Serial.println(F("Could not find a valid BMP280 sensor, check wiring, "
+                     "address, or solder jumpers!"));
+    Serial.print(F("SensorID was: 0x")); Serial.println(bmp.sensorID(), 16);
+    Serial.println(F("ID of 0xFF typically means a bad connection or incorrect address."));
+    while (1) {
+      delay(1000);
+    }
+  }
+
+  // Configure default oversampling and filtering settings
+  bmp.setSampling(Adafruit_BMP280::MODE_NORMAL,     /* Operating Mode */
+                  Adafruit_BMP280::SAMPLING_X2,     /* Temp. oversampling */
+                  Adafruit_BMP280::SAMPLING_X16,    /* Pressure oversampling */
+                  Adafruit_BMP280::FILTER_X16,      /* Filtering */
+                  Adafruit_BMP280::STANDBY_MS_500); /* Standby time */
+
+  Serial.println(F("BMP280 successfully initialized at 0x76!"));
+
   tft.init(240, 320); // Initialize the TFT display with width and height
   tft.setRotation(1); //Rotate the initial menu
 
@@ -78,22 +147,39 @@ void setup(void) {
 
 void loop() { 
   int yValue = analogRead(JOY_Y); // Read the Y-axis value of the joystick
-  //if pull up the joystick
-  if (yValue < 500 && lastJoyY >= 500) {  
-    menuOption--; //Move up
-    if (menuOption < 0) {
-      menuOption = 2;//Wrap around to the last option if it goes above the first option
+  int btnValue = digitalRead(JOY_SW); // Read BMP280 Value by pressing the joystick
+
+  if(currentPage == 0){
+    //if pull up the joystick
+    if (yValue < 500 && lastJoyY >= 500) {  
+      menuOption--; //Move up
+      if (menuOption < 0) {
+        menuOption = 2;//Wrap around to the last option if it goes above the first option
+      } 
+      drawMenu(); 
     } 
-    drawMenu(); 
-  } 
-  //if pull down the joystick
-  else if (yValue > 3500 && lastJoyY <= 3500) {  
-    menuOption++; //Move down
-    if (menuOption > 2) {
-      menuOption = 0;//Wrap around to the first option if it goes below the last option
+    //if pull down the joystick
+    else if (yValue > 3500 && lastJoyY <= 3500) {  
+      menuOption++; //Move down
+      if (menuOption > 2) {
+        menuOption = 0;//Wrap around to the first option if it goes below the last option
+      }
+      drawMenu(); 
+    } 
+
+    if (btnValue == LOW && lastButtonState == HIGH) { 
+      currentPage = menuOption + 1;  
+      drawDataPage(); 
+      delay(200); 
+    } 
+  } else { 
+    // Exit to menu if joystick is pressed
+    if (btnValue == LOW && lastButtonState == HIGH) { 
+      currentPage = 0; 
+      drawMenu(); 
+      delay(200); 
     }
-    drawMenu(); 
-  } 
+  }
 
   lastJoyY = yValue; //Renew the y value
   delay(50); 
