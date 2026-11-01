@@ -43,7 +43,7 @@ int menuOption = 0; // Variable to keep track of the selected menu option
 int currentPage = 0; // Variable to keep track of the current page being displayed
 int lastJoyY = 2048; // Variable to store the last joystick Y position
 bool lastButtonState = HIGH; // Variable to store the last button state
-
+unsigned long lastRefresh = 0; // Variable to store the last time the data page was refreshed
 
 
 void drawMenu(){
@@ -178,6 +178,11 @@ void loop() {
       currentPage = 0; 
       drawMenu(); 
       delay(200); 
+    }
+    // Refresh data every second
+    else if (millis() - lastRefresh > 1000) { 
+      drawDataPage(); 
+      lastRefresh = millis(); 
     }
   }
 
