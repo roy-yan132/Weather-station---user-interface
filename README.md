@@ -13,7 +13,9 @@ The system features the user to navigate the menu using the joystick, displaying
 * **Sensor:** BMP280 Barometric Pressure and Temperature Sensor 
 * **Display:** GMT020-02-7P 2.0-inch SPI TFT LCD (ST7789 Driver) 
 * **User Input:** KY-023 Dual-Axis Analog Joystick with Push-Button
- 
+
+| Component | Pin Name | ESP32-S3 GPIO | Function | 
+| :--- | :--- | :--- | :--- | 
 | **TFT Display** |
 | | CS | GPIO 4 | SPI Chip Select | 
 | | DC | GPIO 5 | Data/Command | 
