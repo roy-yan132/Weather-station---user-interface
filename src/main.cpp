@@ -42,6 +42,8 @@ float p = 3.1415926; // Variable to store the value of pi
 int menuOption = 0; // Variable to keep track of the selected menu option
 int currentPage = 0; // Variable to keep track of the current page being displayed
 int lastJoyY = 2048; // Variable to store the last joystick Y position
+int lastJoyX = 2048; // Variable to store the last joystick X position
+float seaLevelPressure = 1013.25; // Standard sea level pressure in hPa
 bool lastButtonState = HIGH; // Variable to store the last button state
 unsigned long lastRefresh = 0; // Variable to store the last time the data page was refreshed
 
@@ -83,6 +85,11 @@ void drawDataPage() {
     tft.print(pressure, 1); 
     tft.print(" hPa"); 
 
+    tft.setTextSize(2); 
+    tft.setTextColor(ST77XX_RED); 
+    tft.setCursor(20, 210); 
+    tft.print("Press SW to Exit");
+
   }  
   else if (currentPage == 2) { 
     tft.setTextSize(6);  
@@ -91,6 +98,11 @@ void drawDataPage() {
     tft.setTextSize(3); 
     tft.setCursor(20, 150); 
     tft.print("mbar"); 
+
+    tft.setTextSize(2); 
+    tft.setTextColor(ST77XX_RED); 
+    tft.setCursor(20, 210); 
+    tft.print("Press SW to Exit");
   }  
   else if (currentPage == 3) { 
     tft.setTextSize(4); 
@@ -99,22 +111,36 @@ void drawDataPage() {
     tft.setCursor(20, 100); 
     tft.print(temp, 1); 
     tft.print(" C"); 
+
+    tft.setTextSize(2); 
+    tft.setTextColor(ST77XX_RED); 
+    tft.setCursor(20, 210); 
+    tft.print("Press SW to Exit");
   }
   else if (currentPage == 4) { 
     tft.setTextSize(4); 
     tft.setCursor(20, 20); 
     tft.print("Elevation:"); 
     tft.setCursor(20, 100); 
-    float seaLevelPressure = 1013.25; // Standard sea level pressure in hPa
     float elevation = bmp.readAltitude(seaLevelPressure); // Calculate elevation based on sea level pressure
     tft.print(elevation, 1); 
     tft.print(" m"); 
-  }
- 
-  tft.setTextSize(2); 
-  tft.setTextColor(ST77XX_RED); 
-  tft.setCursor(20, 210); 
-  tft.print("Press SW to Exit"); 
+
+    tft.setTextSize(2); 
+    tft.setTextColor(ST77XX_YELLOW); 
+    tft.setCursor(20, 140); 
+    tft.print("Ref: "); 
+    tft.print(seaLevelPressure, 1);
+    tft.print(" hPa");
+    tft.setTextSize(2); 
+    tft.setTextColor(ST77XX_CYAN); 
+    tft.setCursor(20, 160); 
+    tft.print("L/R to adjust"); 
+    tft.setTextSize(2); 
+    tft.setTextColor(ST77XX_RED); 
+    tft.setCursor(20, 210); 
+    tft.print("Press SW to Exit");
+  } 
 } 
 
 void setup(void) { 
@@ -157,6 +183,7 @@ void setup(void) {
 
 void loop() { 
   int yValue = analogRead(JOY_Y); // Read the Y-axis value of the joystick
+  int xValue = analogRead(JOY_X); // Read the X-axis value of the joystick
   int btnValue = digitalRead(JOY_SW); // Read BMP280 Value by pressing the joystick
 
   if(currentPage == 0){
@@ -180,23 +207,38 @@ void loop() {
     if (btnValue == LOW && lastButtonState == HIGH) { 
       currentPage = menuOption + 1;  
       drawDataPage(); 
-      delay(200); 
+      delay(300); 
     } 
   } else { 
     // Exit to menu if joystick is pressed
     if (btnValue == LOW && lastButtonState == HIGH) { 
-      currentPage = 0; 
+      currentPage = 0;
       drawMenu(); 
-      delay(200); 
+      delay(300); 
+    }
+    bool isAdjusting = false; // Flag to indicate if the user is adjusting the sea level pressure
+
+    if (currentPage == 4) { 
+      // Adjust sea level pressure if joystick is moved left or right
+      if (xValue < 1000 && lastJoyX >= 1000) {  
+        seaLevelPressure -= 1.0; //Decrease sea level pressure
+        isAdjusting = true; 
+      } 
+      else if (xValue > 3000 && lastJoyX <= 3000) {  
+        seaLevelPressure += 1.0; //Increase sea level pressure
+        isAdjusting = true; 
+      }  
     }
     // Refresh data every second
-    else if (millis() - lastRefresh > 1000) { 
+    if (isAdjusting || (millis() - lastRefresh > 1000)) { 
       drawDataPage(); 
       lastRefresh = millis(); 
     }
   }
 
   lastJoyY = yValue; //Renew the y value
+  lastJoyX = xValue; //Renew the x value
+  lastButtonState = btnValue; //Renew the button state
   delay(50); 
 }
  
