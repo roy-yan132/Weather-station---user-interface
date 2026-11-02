@@ -54,10 +54,10 @@ void drawMenu(){
   tft.setTextColor(ST77XX_WHITE);
   tft.setCursor(20,20);
   tft.print("-----MENU-----");
-  String items[] = {"1. Pressure hPa", "2. Pressure mbar", "3. Temp(C)"}; 
+  String items[] = {"1. Pressure hPa", "2. Pressure mbar", "3. Temp(C)", "4. Elevation(m)"}; 
    
-  for (int i = 0; i < 3; i++) { 
-    tft.setCursor(20, 80 + (i * 50)); 
+  for (int i = 0; i < 4; i++) { 
+    tft.setCursor(20, 65 + (i * 45)); 
     if (i == menuOption) { 
       tft.setTextColor(ST77XX_BLACK, ST77XX_CYAN); //Highlight the selected menu item with cyan background and black text
     } 
@@ -99,11 +99,21 @@ void drawDataPage() {
     tft.setCursor(20, 100); 
     tft.print(temp, 1); 
     tft.print(" C"); 
-  } 
+  }
+  else if (currentPage == 4) { 
+    tft.setTextSize(4); 
+    tft.setCursor(20, 20); 
+    tft.print("Elevation:"); 
+    tft.setCursor(20, 100); 
+    float seaLevelPressure = 1013.25; // Standard sea level pressure in hPa
+    float elevation = bmp.readAltitude(seaLevelPressure); // Calculate elevation based on sea level pressure
+    tft.print(elevation, 1); 
+    tft.print(" m"); 
+  }
  
   tft.setTextSize(2); 
   tft.setTextColor(ST77XX_RED); 
-  tft.setCursor(20, 260); 
+  tft.setCursor(20, 210); 
   tft.print("Press SW to Exit"); 
 } 
 
@@ -154,14 +164,14 @@ void loop() {
     if (yValue < 500 && lastJoyY >= 500) {  
       menuOption--; //Move up
       if (menuOption < 0) {
-        menuOption = 2;//Wrap around to the last option if it goes above the first option
+        menuOption = 3;//Wrap around to the last option if it goes above the first option
       } 
       drawMenu(); 
     } 
     //if pull down the joystick
     else if (yValue > 3500 && lastJoyY <= 3500) {  
       menuOption++; //Move down
-      if (menuOption > 2) {
+      if (menuOption > 3) {
         menuOption = 0;//Wrap around to the first option if it goes below the last option
       }
       drawMenu(); 
